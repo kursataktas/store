@@ -347,13 +347,11 @@ export class StateFactory implements OnDestroy {
     for (const actionType of Object.keys(actions)) {
       const actionHandlers = actions[actionType].map(actionMeta => {
         const abortController = new AbortController();
+        const abortSignal = abortController.signal;
         const cancellable = !!actionMeta.options.cancelUncompleted;
 
         return (action: any) => {
-          const stateContext = this._stateContextFactory.createStateContext(
-            path,
-            abortController
-          );
+          const stateContext = this._stateContextFactory.createStateContext(path, abortSignal);
 
           let result = instance[actionMeta.fn](stateContext, action);
 
@@ -394,7 +392,7 @@ export class StateFactory implements OnDestroy {
               result = result.pipe(takeUntil(cancelled));
             }
 
-            const aborted = fromEvent(abortController.signal, 'abort');
+            const aborted = fromEvent(abortSignal, 'abort');
 
             result = result.pipe(
               takeUntil(aborted),
